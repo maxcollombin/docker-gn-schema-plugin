@@ -73,15 +73,12 @@ cp -r geocat/schemas/iso19139.che/src/main/plugin/iso19139.che ./schema_plugins/
 echo " Cleaning up..."
 rm -rf geocat
 
-# Update existing Dockerfile to add the iso19139.che plugin
-echo " Updating existing Dockerfile..."
-sed -i '/^FROM /a \
-USER root\n\
-# Copier le plugin iso19139.che\n\
-COPY schema_plugins/iso19139.che /opt/geonetwork/WEB-INF/data/config/schema_plugins/iso19139.che\n\
-# Changer les permissions\n\
-RUN chown -R jetty:jetty /opt/geonetwork/WEB-INF/data/config/schema_plugins/iso19139.che\n\
-USER jetty' Dockerfile
+# Update docker-compose.yml to mount the schema_plugins volume
+echo "📝 Updating docker-compose.yml to mount schema plugins..."
+# Add volume mount for schema_plugins in both geonetwork and geonetwork-replica services
+sed -i '/volumes:/,/depends_on:/{
+  /- geonetwork:\/catalogue-data/a\    - ./schema_plugins:/opt/geonetwork/WEB-INF/data/config/schema_plugins
+}' docker-compose.yml
 
 # Create Makefile for easier management
 echo " Creating Makefile..."
@@ -98,14 +95,24 @@ clean:
 	docker compose down --volumes --rmi all
 EOF
 
-echo "Setup completed successfully!"
+echo "✅ Setup completed successfully!"
 echo ""
-echo "Next steps:"
+echo "🔧 Configuration applied:"
+echo "  - GeoNetwork $VERSION Docker stack downloaded"
+echo "  - iso19139.che schema plugin integrated"
+echo "  - docker-compose.yml updated with schema_plugins volume mount"
+echo ""
+echo "🚀 Next steps:"
 echo "  cd $VERSION"
 echo "  make up       # Start the stack"
-echo "  GeoNetwork is available at: http://localhost:8080/geonetwork"
-echo "  PostgreSQL is available at: localhost:5432"
-echo "  Elasticsearch is available at: http://localhost:9200"
-echo "  make down       # Stop the stack"
-echo "  make clean      # Remove all containers, volumes, and images"
-echo "  Exit the folder and rm -rf $VERSION if you want to remove everything"
+echo ""
+echo "🌐 Services will be available at:"
+echo "  - GeoNetwork: http://localhost:8080/geonetwork"
+echo "  - PostgreSQL: localhost:5432"
+echo "  - Elasticsearch: http://localhost:9200"
+echo ""
+echo "📋 Management commands:"
+echo "  make down     # Stop the stack"
+echo "  make clean    # Remove all containers, volumes, and images"
+echo ""
+echo "🗑️  To remove everything: exit the folder and run 'rm -rf $VERSION'"

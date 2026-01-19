@@ -17,9 +17,9 @@ if ! grep -F -q "$VERSION/" .gitignore 2>/dev/null; then
     # Ensure .gitignore ends with a newline before appending
     tail -c1 .gitignore | read -r _ || echo >> .gitignore
     echo "$VERSION/" >> .gitignore
-    echo "✅ Added $VERSION/ to .gitignore"
+    echo " Added $VERSION/ to .gitignore"
 else
-    echo "ℹ️  $VERSION/ already in .gitignore"
+    echo "  $VERSION/ already in .gitignore"
 fi
 
 # Clean up previous version folder if exists
@@ -64,17 +64,26 @@ cd geocat
 git sparse-checkout set schemas/iso19139.che/src/main/plugin/iso19139.che
 cd ..
 
-# Create schema_plugins directory and copy plugin
-echo "Setting up schema plugin..."
+# Download the iso19115-3.2018.che plugin with sparse-checkout
+echo "Downloading iso19115-3.2018.che plugin (optimized)..."
+git clone --filter=blob:none --sparse https://github.com/metadata101/iso19115-3.2018.che.git
+cd iso19115-3.2018.che
+git sparse-checkout set src/main/plugin/iso19115-3.2018.che
+cd ..
+
+# Create schema_plugins directory and copy plugins
+echo "Setting up schema plugins..."
 mkdir -p schema_plugins
 cp -r geocat/schemas/iso19139.che/src/main/plugin/iso19139.che ./schema_plugins/
+cp -r iso19115-3.2018.che/src/main/plugin/iso19115-3.2018.che ./schema_plugins/
 
-# Clean up geocat repo
+# Clean up cloned repos
 echo " Cleaning up..."
 rm -rf geocat
+rm -rf iso19115-3.2018.che
 
 # Update docker-compose.yml to mount the schema_plugins volume
-echo "📝 Updating docker-compose.yml to mount schema plugins..."
+echo " Updating docker-compose.yml to mount schema plugins..."
 # Add volume mount for schema_plugins in both geonetwork and geonetwork-replica services
 sed -i '/volumes:/,/depends_on:/{
   /- geonetwork:\/catalogue-data/a\    - ./schema_plugins:/opt/geonetwork/WEB-INF/data/config/schema_plugins
@@ -95,24 +104,25 @@ clean:
 	docker compose down --volumes --rmi all
 EOF
 
-echo "✅ Setup completed successfully!"
+echo " Setup completed successfully!"
 echo ""
-echo "🔧 Configuration applied:"
+echo " Configuration applied:"
 echo "  - GeoNetwork $VERSION Docker stack downloaded"
 echo "  - iso19139.che schema plugin integrated"
+echo "  - iso19115-3.2018.che schema plugin integrated"
 echo "  - docker-compose.yml updated with schema_plugins volume mount"
 echo ""
-echo "🚀 Next steps:"
+echo " Next steps:"
 echo "  cd $VERSION"
 echo "  make up       # Start the stack"
 echo ""
-echo "🌐 Services will be available at:"
+echo " Services will be available at:"
 echo "  - GeoNetwork: http://localhost:8080/geonetwork"
 echo "  - PostgreSQL: localhost:5432"
 echo "  - Elasticsearch: http://localhost:9200"
 echo ""
-echo "📋 Management commands:"
+echo " Management commands:"
 echo "  make down     # Stop the stack"
 echo "  make clean    # Remove all containers, volumes, and images"
 echo ""
-echo "🗑️  To remove everything: exit the folder and run 'rm -rf $VERSION'"
+echo "  To remove everything: exit the folder and run 'rm -rf $VERSION'"
